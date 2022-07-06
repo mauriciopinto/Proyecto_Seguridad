@@ -1,4 +1,5 @@
 import React from "react";
+import { Buffer } from "buffer";
 import EmailList from "../components/List";
 import Region from "../components/Region";
 import { aes_enc, aes_dec, aes_pad_plaintext, arr_to_bytes } from "../services/encryption/aes";
@@ -26,7 +27,8 @@ class DashBoard extends React.Component {
             gapiInited: false,
             gisInited: false,
             loggedIn: false,
-            profile: ''
+            profile: '',
+            labelId: undefined
         }
 
         this.sendMessage = this.sendMessage.bind(this);
@@ -53,6 +55,7 @@ class DashBoard extends React.Component {
             document.head.appendChild(gisScript)
         }
         
+
     }
 
     initClient () {
@@ -92,6 +95,7 @@ class DashBoard extends React.Component {
 
                     this.setState({loggedIn: true})
                     this.getProfile ()
+                    this.getLabels ()
                     
                 }
                 if (window.gapi.client.getToken() === null) {
@@ -105,11 +109,24 @@ class DashBoard extends React.Component {
     }
 
     getProfile () {
-        let response
         window.gapi.client.gmail.users.getProfile ({
             userId: 'me'
         })
         .then ((res) => this.setState({profile: res.result.emailAddress}))
+    }
+
+    getLabels () {
+        window.gapi.client.gmail.users.labels.list({
+            userId: 'me'
+        })
+        .then ((res) => {
+            for (let i = 0; i < res.result.labels.length; i++) {
+                let label = res.result.labels[i]
+                if (label.name == "Encrypted") {
+                    this.setState({labelId: label.id})
+                }
+            }
+        })
     }
 
     sendMessage (e) {
@@ -125,48 +142,22 @@ class DashBoard extends React.Component {
         let to = e.target[0].value
         let from = this.state.profile
 
-        let message = {
-            From: from,
-            To: to,
-            Subject: subject,
-            Body: ciphertext
-        }
+        let message = 
+        "From: " + from + "\r\n" +
+        "To: " + to + "\r\n" +
+        "Subject: " + subject + "\r\n\r\n" +
+        "body: " + ciphertext
 
         let items = this.state.items
-        items.push(message)
+        //items.push(message)
         
 
-        this.setState ({items: items})
+        //this.setState ({items: items})
 
         window.gapi.client.gmail.users.messages.send({
             userId: 'me',
-            body: {
-                id: "1",
-                raw: {
-                    partId: "1",
-                    mimeType: "text/plain",
-                    headers: [
-                        {
-                            name: "From",
-                            value: from
-                        },
-                        {
-                            name: "To",
-                            value: to
-                        },
-                        {
-                            name: "Subject",
-                            value: subject
-                        },
-                        {
-                            name: "E2E",
-                            value: "true"
-                        }
-                    ],
-                    body: {
-                        data: ciphertext
-                    }
-                }
+            resource: {
+                'raw': btoa(message).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '')
             }
         })
         .then ((res) => {
