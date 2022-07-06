@@ -1,14 +1,15 @@
 import React from "react";
-import { Buffer } from "buffer";
+import { Base64 } from "js-base64";
 import EmailList from "../components/List";
 import Region from "../components/Region";
-import { aes_enc, aes_dec, aes_pad_plaintext, arr_to_bytes } from "../services/encryption/aes";
+import { aes_enc, aes_dec, aes_pad_plaintext, arr_to_bytes, bytes_to_arr } from "../services/encryption/aes";
 import { Grid, GridElement } from "../components/Grid";
 import Form from "../components/Form";
 
+
 const CLIENT_ID = "606649275611-9ihmpjb7r8i9ic4dft3jq38a84pelscf.apps.googleusercontent.com"
 const DISCOVERY_DOC = "https://www.googleapis.com/discovery/v1/apis/gmail/v1/rest"
-const SCOPES = "https://www.googleapis.com/auth/gmail.readonly https://www.googleapis.com/auth/gmail.send"
+const SCOPES = "https://www.googleapis.com/auth/gmail.readonly https://www.googleapis.com/auth/gmail.send https://www.googleapis.com/auth/gmail.modify"
 
 
 
@@ -23,12 +24,14 @@ class DashBoard extends React.Component {
             currentFrom: '',
             currentBody: '',
             currentPlaintext: '',
+            currentIV: undefined,
             tokenClient: undefined,
             gapiInited: false,
             gisInited: false,
             loggedIn: false,
             profile: '',
-            labelId: undefined
+            labelId: undefined,
+            currentMessageId: undefined
         }
 
         this.sendMessage = this.sendMessage.bind(this);
@@ -96,7 +99,6 @@ class DashBoard extends React.Component {
                     this.setState({loggedIn: true})
                     this.getProfile ()
                     this.getLabels ()
-                    
                 }
                 if (window.gapi.client.getToken() === null) {
                     this.state.tokenClient.requestAccessToken({prompt: 'consent'})
@@ -120,24 +122,79 @@ class DashBoard extends React.Component {
             userId: 'me'
         })
         .then ((res) => {
+            //console.log (res.result.labels)
             for (let i = 0; i < res.result.labels.length; i++) {
                 let label = res.result.labels[i]
                 if (label.name == "Encrypted") {
-                    this.setState({labelId: label.id})
+                    this.setState({labelId: label.id}, () => this.getEncryptedMessages())
                 }
             }
         })
     }
 
+    getEncryptedMessages () {
+        this.setState ({items: []}, () => {
+            window.gapi.client.gmail.users.messages.list ({
+                userId: "me",
+                labelIds: [this.state.labelId]
+            })
+            .then ((res) => {
+                //console.log (res)
+                let messages = res.result.messages
+
+                for (let i = 0; i < messages.length; i++) {
+                    window.gapi.client.gmail.users.messages.get ({
+                        userId: "me",
+                        id: messages[i].id,
+                        format: 'full'
+                    })
+                    .then ((res) => {
+                        //console.log (res)
+                        let data = res.result.payload.body.data
+                        let from = res.result.payload.headers[1].value
+                        let subject = res.result.payload.headers[3].value
+                        let iv = res.result.payload.headers[4].value
+                        
+                        //console.log (aes_dec(Buffer.from(atob(data)), "1234567890123456"))
+                        //console.log (Uint8Array.from(Base64.decode (iv).split(',')))
+                        let items = this.state.items
+                        items.push ({
+                            From: from,
+                            Subject: subject,
+                            Body: Uint8Array.from(Base64.decode(Base64.atob(data)).split(',')),
+                            IV: Uint8Array.from(Base64.decode (iv).split(','))
+                        })
+                        //console.log (items)
+                        this.setState ({items: items})
+                    })
+                    .catch ((err) => {
+                        console.log (err)
+                    })
+                }
+            })
+            .catch ((err) => {
+                console.log (err)
+            })
+        })
+    }
+
     sendMessage (e) {
         e.preventDefault()
-        console.log(e.target)
+        //console.log(e.target)
         let key = e.target[3].value
         let plaintext = e.target[2].value
+        let iv = new Uint8Array (16)
+        iv = window.crypto.getRandomValues(iv)
+        //console.log (iv)
         
         plaintext = aes_pad_plaintext (plaintext)
         
-        let ciphertext = aes_enc(plaintext, key)
+        let ciphertext = aes_enc(plaintext, key, iv)
+
+        ciphertext = Base64.encode(ciphertext.toString())
+        iv = Base64.encode(iv.toString())
+        //console.log (iv)
+        
         let subject = e.target[1].value
         let to = e.target[0].value
         let from = this.state.profile
@@ -145,28 +202,39 @@ class DashBoard extends React.Component {
         let message = 
         "From: " + from + "\r\n" +
         "To: " + to + "\r\n" +
-        "Subject: " + subject + "\r\n\r\n" +
-        "body: " + ciphertext
+        "Subject: " + subject + "\r\n" + 
+        "IV: " + iv + "\r\n\r\n" + ciphertext
 
-        let items = this.state.items
-        //items.push(message)
-        
-
-        //this.setState ({items: items})
+        //console.log (message)
 
         window.gapi.client.gmail.users.messages.send({
             userId: 'me',
             resource: {
-                'raw': btoa(message).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '')
+                'raw': Base64.btoa(message).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, ''),
             }
         })
         .then ((res) => {
-            console.log (res)
+            let messageId = res.result.id
+            window.gapi.client.gmail.users.messages.modify ({
+                userId: "me",
+                id: messageId,
+                resource: {
+                    'addLabelIds': [this.state.labelId]
+                }
+            })
+            .then ((res) => {
+                console.log ("updated label")
+                this.getEncryptedMessages ()
+            })
+            .catch ((err) => {
+                console.log (err)
+            })
         })
         .catch ((err) => console.log (err))
     }
 
     openDecrypt (message) {
+        console.log (message)
         if (this.state.showDecrypt) {
             this.setState({
                 showDecrypt: false, 
@@ -180,7 +248,8 @@ class DashBoard extends React.Component {
             showDecrypt: true, 
             currentFrom: message.From,
             currentSubject: message.Subject,
-            currentBody: message.Body
+            currentBody: message.Body,
+            currentIV: message.IV
         })
     }
 
@@ -189,8 +258,9 @@ class DashBoard extends React.Component {
 
         let ciphertext = this.state.currentBody
         let key = e.target[0].value
+        let iv = this.state.currentIV
 
-        let plaintext = aes_dec (ciphertext, key)
+        let plaintext = aes_dec (ciphertext, key, iv)
         this.setState({currentPlaintext: plaintext})
     }
 

@@ -1,12 +1,12 @@
 import aesjs from "aes-js";
 import { Buffer } from "buffer";
 
-export function aes_enc (m, key) {
+export function aes_enc (m, key, iv) {
     let c, bytes;
-    let iv = "1234567890123456";
+    //console.log ("key: ", key)
+    //console.log ("iv: ", iv.toString())
 
     key = Buffer.from(key, 'utf-8')
-    iv = Buffer.from(iv, 'utf-8')
     let AES_CBC = new aesjs.ModeOfOperation.cbc(key,iv);
 
     bytes = aesjs.utils.utf8.toBytes(m)
@@ -15,12 +15,11 @@ export function aes_enc (m, key) {
     return c;
 }
 
-export function aes_dec (c, key) {
+export function aes_dec (c, key, iv) {
     let m, bytes;
-    let iv = "1234567890123456";
-    
+    //console.log ("key: ", key)
+    //console.log ("iv: ", iv.toString())
     key = Buffer.from(key, 'utf-8')
-    iv = Buffer.from(iv, 'utf-8')
     let AES_CBC = new aesjs.ModeOfOperation.cbc(key, iv);
 
     bytes = AES_CBC.decrypt(c);
@@ -42,4 +41,8 @@ export function aes_pad_plaintext(m) {
 
 export function arr_to_bytes(c) {
     return aesjs.utils.utf8.fromBytes(c)
+}
+
+export function bytes_to_arr(c) {
+    return aesjs.utils.utf8.toBytes(c)
 }
