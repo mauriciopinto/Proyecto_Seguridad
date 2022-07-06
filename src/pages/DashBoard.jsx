@@ -226,6 +226,8 @@ class DashBoard extends React.Component {
 
         plaintext = aes_pad_plaintext (plaintext)
         
+        console.log (plaintext, plaintext.length)
+
         let ciphertext = aes_enc(plaintext, key, iv)
 
         ciphertext = Base64.encode(ciphertext.toString())
@@ -342,7 +344,7 @@ class DashBoard extends React.Component {
                         <h2 style={{color: "white"}}>E2EE Inbox</h2>
                         <EmailList items={this.state.items} onIlClick={this.openDecrypt}/>
                     </GridElement>
-                    <GridElement gridRow='1/5' gridColumn='3' bg="#568EDF" z="-1">
+                    <GridElement gridRow='1/5' gridColumn='3' bg="#568EDF" z="0">
                         <Region 
                             show={this.state.showDecrypt} 
                             components={

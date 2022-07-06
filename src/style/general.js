@@ -52,7 +52,7 @@ var formStyle = {
 
 var formCenterStyle = {
     generalStyle: {
-        margin: 'auto',
+        margin: 'auto'
     },
     submitStyle: {
         backgroundColor: styleColors.highlightColor,
@@ -73,7 +73,7 @@ var listStyle = {
         overflowX: "hidden",
         height: "80%",
         padding: "4px",
-        margin: "8px"
+        margin: "8px",
     },
     listItemStyle: {
         cursor: 'pointer',
