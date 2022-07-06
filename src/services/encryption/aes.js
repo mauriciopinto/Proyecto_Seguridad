@@ -5,11 +5,15 @@ export function aes_enc (m, key, iv) {
     let c, bytes;
     //console.log ("key: ", key)
     //console.log ("iv: ", iv.toString())
-
     key = Buffer.from(key, 'utf-8')
     let AES_CBC = new aesjs.ModeOfOperation.cbc(key,iv);
 
     bytes = aesjs.utils.utf8.toBytes(m)
+    console.log (bytes.length)
+    if (bytes.length % 16 != 0) {
+        let trim = bytes.length - (bytes.length % 16)
+        bytes = bytes.slice(0, trim)
+    }
     c = AES_CBC.encrypt(bytes)
 
     return c;
