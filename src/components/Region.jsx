@@ -8,7 +8,7 @@ class Region extends React.Component {
     render () {
         if (this.props.show) {
             return (
-                <div>
+                <div style={{height: "80%", paddingTop: "80px", paddingBottom: "0px"}}>
                     {this.props.components}
                 </div>
             )

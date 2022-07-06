@@ -12,16 +12,16 @@ class Form extends React.Component {
     render () {
         return this.props.center ? (
             <form onSubmit={this.props.handleSubmit} style={pageStyle.formCenterStyle.generalStyle}>
-                <table>
+                <table style={{margin: "auto", width: "80%"}}>
                     <tbody>
                         {
                             this.props.fields.map(
-                                (field) => {
-                                    return <tr><td>{field}</td></tr>
+                                (field, j) => {
+                                    return <tr key={j}><td>{field}</td></tr>
                                 }
                             )
                         }
-                        <tr><td><input type="submit" value={this.props.submitText}/></td></tr>
+                        <tr><td><input type="submit" value={this.props.submitText} style={pageStyle.formStyle.submitStyle}/></td></tr>
                     </tbody>
                 </table>
             </form>
@@ -37,7 +37,7 @@ class Form extends React.Component {
                                 }
                             )
                         }
-                        <tr><td><input type="submit" value={this.props.submitText}/></td></tr>
+                        <tr><td><input type="submit" value={this.props.submitText} style={pageStyle.formStyle.submitStyle}/></td></tr>
                     </tbody>
                 </table>
             </form>

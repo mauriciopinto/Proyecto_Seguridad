@@ -1,15 +1,6 @@
 import React from 'react'
-
-var ulStyle = {
-    listStyleType: 'none',
-    padding: 0
-}
-
-var liStyle = {
-    cursor: 'pointer',
-    border: '2px solid black',
-    margin: 'auto'
-}
+import '../App.css'
+import { pageStyle } from '../style/general'
 
 class EmailList extends React.Component {
     constructor (props) {
@@ -23,13 +14,13 @@ class EmailList extends React.Component {
             )
         }
         return (
-            <ul style={ulStyle}>
+            <ul style={pageStyle.listStyle.generalStyle} className="scroll">
                 {this.props.items.map(
-                    (i) => {
+                    (i,j) => {
                         return (
-                            <li style={liStyle}>
-                                <h3>{i.Subject}</h3>
-                                <p>{i.From} <button onClick={() => this.props.onIlClick(i)}>Decrypt</button></p>
+                            <li key={j} style={pageStyle.listStyle.listItemStyle}>
+                                <h3 style={pageStyle.listStyle.listItemStyle.liHeaderStyle}>{i.Subject}</h3>
+                                <p style={pageStyle.listStyle.listItemStyle.liSubTitleStyle}>{"De:" + i.From} </p><button onClick={() => this.props.onIlClick(i)} style={pageStyle.formStyle.submitStyle}>Decrypt</button>
                             </li>
                         )
                     }
