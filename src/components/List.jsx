@@ -10,7 +10,7 @@ class EmailList extends React.Component {
     render () {
         if (this.props.items.length == 0) {
             return (
-                <p>No items found...</p>
+                <p style={{color: pageStyle.colors.fontInverseColor, fontWeight: "bold"}}>No items found...</p>
             )
         }
         return (

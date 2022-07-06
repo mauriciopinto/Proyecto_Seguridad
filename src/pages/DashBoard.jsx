@@ -158,7 +158,9 @@ class DashBoard extends React.Component {
                         let subject = res.result.payload.headers[3].value
                         let iv = res.result.payload.headers[4].value
                         let keyName = res.result.payload.headers[5].value
-                        
+                        let labels = res.result.labelIds
+
+                        //if (!labels.includes("SENT")) {
                         //console.log (aes_dec(Buffer.from(atob(data)), "1234567890123456"))
                         //console.log (Uint8Array.from(Base64.decode (iv).split(',')))
                         let items = this.state.items
@@ -171,6 +173,7 @@ class DashBoard extends React.Component {
                         })
                         //console.log (items)
                         this.setState ({items: items})
+                        //}
                     })
                     .catch ((err) => {
                         console.log (err)
@@ -196,7 +199,6 @@ class DashBoard extends React.Component {
     }
 
     checkInputs (key, plaintext) {
-        console.log (key.length)
         if (key.length == 0 || key.length % 16 != 0) {
             alert("Por favor ingrese una llave cuya longitud sea un múltiplo de 16")
             return false
@@ -313,6 +315,7 @@ class DashBoard extends React.Component {
                 <>
                 <h1>Login with Google to send E2E encrypted email</h1>
                 <button id="auth-btn" style={pageStyle.formStyle.submitStyle}>Login</button>
+                <p style={{color: pageStyle.colors.errorFontColor}}>No olvides agregar o solicitar la etiqueta "ENCRYPTED" para tu cuenta de Gmail para así poder filtrar los correos encriptados</p>
                 </>
             )
         }
@@ -323,7 +326,7 @@ class DashBoard extends React.Component {
                         <h2 style={{color: "white"}}>Envía un mensaje encriptado</h2>
                         <Form handleSubmit={this.sendMessage}
                             fields={[
-                                <p style={{color: pageStyle.colors.fontInverseColor, fontWeight: "bold", fontSize: "0.8em"}}>Este mensaje será encriptado localmente y enviado al receptor a través del servicio de Gmail</p>,
+                                <p style={{color: pageStyle.colors.fontInverseColor, fontWeight: "bold", fontSize: "0.8em"}}>Este mensaje será encriptado localmente y enviado al receptor a través del servicio de Gmail. De esta manera, la información almacenada en los servidores de Google estará segura</p>,
                                 <input type='email' placeholder='Para' style={{width: '100%', border:"none", padding: "4px", borderRadius: "4px"}}/>,
                                 <input type='text' placeholder='Asunto' style={{width: '100%', border:"none", padding: "4px", borderRadius: "4px"}} />,
                                 <textarea placeholder='Ingresa el cuerpo del correo...' style={{width: '100%', height: '200px', border:"none", padding: "4px", borderRadius: "4px"}} />,
